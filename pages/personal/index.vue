@@ -3,9 +3,12 @@
 		<view class="background">
 			<image src="../../static/bg.jpeg" mode="aspectFill" style="width: 100vw;height: 440rpx;" />
 		</view>
-		<view class="text-white user flex align-center text-lg">
-			<image src="https://dummyimage.com/100x100/red" class="shadow-warp" />
-			<text class="text-bold" style="margin-left: 30rpx;">用户昵称</text>
+		<view class="text-white user flex align-center text-lg" v-if="isLogin">
+			<image :src="userDetailWx.avatarUrl" class="shadow-warp" />
+			<text class="text-bold" style="margin-left: 30rpx;">欢迎你，{{userDetailWx.nickName}}</text>
+		</view>
+		<view class="text-white user flex align-center" style="height: 220rpx;" v-else>
+			<van-button plain hairline type="info" open-type="getUserInfo" @getuserinfo="getUserInfo">点击登录</van-button>
 		</view>
 		<view class="bg-white radius padding-top padding-bottom order shadow">
 			<view class="padding flex align-center justify-between" style="border-bottom: 2rpx solid #EEEEEE;padding-top: 0;">
@@ -61,10 +64,21 @@
 	export default {
 		data() {
 			return {
-
+				// 是否登录
+				isLogin: false,
+				// 用户微信信息
+				userDetailWx: {}
 			}
 		},
 		methods: {
+			// 用户点击登录
+			getUserInfo: function(e) {
+				if (e.detail.errMsg == 'getUserInfo:ok') {
+					console.log('用户点击登录', e)
+					this.isLogin = true
+					this.userDetailWx = e.detail.userInfo
+				}
+			},
 			// 跳转地址管理页面
 			toAddressList: function() {
 				uni.navigateTo({
