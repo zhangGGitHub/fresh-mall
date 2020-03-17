@@ -17,7 +17,8 @@
 		{
 			"path": "pages/pay/index",
 			"style": {
-				"navigationBarTitleText": "买单"
+				"navigationBarTitleText": "买单",
+				"disableScroll":true
 			}
 		},
 		{

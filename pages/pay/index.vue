@@ -1,15 +1,110 @@
 <template>
-	<view>
-
+	<view class="container">
+		<view class="top flex align-center justify-between">
+			<view>
+				<view class="text-black text-bold text-xl">
+					付款给商家
+				</view>
+				<view class="padding-top-xs text-gray text-bold">
+					名称：众惠物联网公司
+				</view>
+			</view>
+			<view>
+				<image src="https://dummyimage.com/300x230/61B5FF" />
+			</view>
+		</view>
+		<view class="money padding">
+			<view class="text-xl text-grey text-bold margin-bottom">金额</view>
+			<view class="flex align-center money_input">
+				<text class="text-black text-bold" style="font-size: 72rpx;">￥</text>
+				<view class="text-black text-bold" style="font-size: 66rpx;flex: 1;" v-if="money">{{money}}</view>
+				<view class="text-gray" :class="isActive && money=='' ? 'cursor':''" style="font-size: 60rpx;flex: 1;" @click="isActive = true"
+				 v-else>请输入金额</view>
+			</view>
+		</view>
+		<keyboard @money="getMoney" />
 	</view>
 </template>
 
 <script>
+	import keyboard from '../../components/keyboard/index.vue'
 	export default {
-
+		components: {
+			keyboard
+		},
+		data() {
+			return {
+				// 输入的金额
+				money: '',
+				// 是否点击输入
+				isActive: false
+			}
+		},
+		methods: {
+			getMoney: function(e) {
+				this.money = e
+			}
+		}
 	}
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+	.container {
+		height: 100vh;
+		background-color: #FFFFFF;
 
+		.top {
+			padding: 30rpx 30rpx 70rpx;
+			height: 200rpx;
+			background-color: #f8f8f8;
+
+			image {
+				width: 100rpx;
+				height: 100rpx;
+				border-radius: 4rpx;
+			}
+		}
+
+		.money {
+			padding: 40rpx 50rpx;
+			position: relative;
+			top: -30rpx;
+			background-color: #FFFFFF;
+			border-top-right-radius: 40rpx;
+			border-top-left-radius: 40rpx;
+
+			.money_input {
+				border-bottom: 2rpx solid #F1F1F1;
+
+				.cursor {
+					position: relative;
+				}
+
+				.cursor:after {
+					content: '';
+					display: block;
+					width: 4rpx;
+					height: 70rpx;
+					position: absolute;
+					top: 50%;
+					transform: translateY(-50%);
+					background-color: #454545;
+					animation: adzcc 1s infinite;
+					opacity: 1;
+				}
+
+				@keyframes adzcc {
+
+					0%,
+					100% {
+						opacity: 0;
+					}
+
+					50% {
+						opacity: 1;
+					}
+				}
+			}
+		}
+	}
 </style>
