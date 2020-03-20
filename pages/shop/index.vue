@@ -52,7 +52,7 @@
 					<!-- <text>总价：<text class="text-price text-red">{{item.price * item.num}}</text></text> -->
 				</view>
 				<view class="padding-top flex justify-end">
-					<van-button type="info" size="normal">确认付款</van-button>
+					<van-button type="info" size="normal" @click="confirmPay">确认付款</van-button>
 				</view>
 			</view>
 		</van-popup>
@@ -116,6 +116,28 @@
 			}
 		},
 		methods: {
+			// 点击确认付款 --> 检查是否登录 --> 检查有没有默认收货地址 --> 生成订单 --> 支付
+			confirmPay: function() {
+				if (uni.getStorageSync('isLogin')) {
+					this.uniFly.post({
+						url: '/addr/getDefault',
+						params: {
+							userId: uni.getStorageSync('userInfo').userId
+						}
+					}).then(res => {
+						console.log('查询默认地址', res)
+					})
+				} else {
+					Dialog.alert({
+						title: '提示',
+						message: '请先登录'
+					}).then(() => {
+						uni.switchTab({
+							url: '../personal/index'
+						})
+					})
+				}
+			},
 			// 商品加数量
 			goodsAddNum: function(e) {
 				var that = this

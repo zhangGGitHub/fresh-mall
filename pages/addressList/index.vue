@@ -8,14 +8,14 @@
 				</view>
 				<view class="padding-top-xs flex align-center">
 					<view style="width: 140rpx">
-						<van-tag type="primary" v-if="activeIndex==index">默认地址</van-tag>
+						<van-tag type="primary" v-if="addressDefaultIndex==index">默认地址</van-tag>
 					</view>
 					<view class="address">
 						{{item.address}}
 					</view>
 				</view>
 			</view>
-			<view class="flex flex-direction align-center justify-center modify" style="width: 100rpx;">
+			<view class="flex flex-direction align-center justify-center modify" style="width: 120rpx;" @click="toModifyAddress(item.id)">
 				<text class="cuIcon-write" style="font-size: 40rpx;" />
 			</view>
 		</view>
@@ -35,16 +35,21 @@
 			return {
 				// 地址列表
 				addressList: [],
-				// 点击的下标
-				activeIndex: 0
+				// 默认地址下标
+				addressDefaultIndex: 0
 			}
 		},
 		onLoad: function() {
 			this.getAddressList()
 		},
+		onShow: function() {
+			this.getAddressList()
+		},
 		methods: {
 			// 获取所有地址列表
 			getAddressList: function() {
+				var that = this
+
 				this.uniFly.post({
 					url: '/addr/list',
 					params: {
@@ -53,11 +58,19 @@
 				}).then(res => {
 					console.log('地址列表', res)
 					if (res.data.code == 0) {
-						this.addressList = res.data.data
+						if (res.data.data.length != 0) {
+							for (var i = 0; i < res.data.data.length; i++) {
+								if (res.data.data[i].isDefaultAddress == 1) {
+									that.addressDefaultIndex = i
+								}
+							}
+						}
+
 						res.data.data.forEach(r => {
-							console.log(r)
 							r.address = r.city.split('-')[0] + r.city.split('-')[1] + r.city.split('-')[2] + r.shippingAddress
 						})
+
+						that.addressList = res.data.data
 					} else {
 						Toast(res.data.msg)
 					}
@@ -65,12 +78,32 @@
 			},
 			// 切换默认地址
 			changeDefault: function(index) {
-				this.activeIndex = index
+				var that = this
+				this.uniFly.post({
+					url: '/addr/setDefault',
+					params: {
+						bookId: this.addressList[index].id
+					}
+				}).then(res => {
+					console.log('设置默认地址', res)
+					if (res.data.code == 0) {
+						Toast('设置默认地址成功')
+						that.addressDefaultIndex = index
+					} else {
+						Toast(res.data.msg)
+					}
+				})
 			},
 			// 跳转新增收货地址
 			addAddress: function() {
 				uni.navigateTo({
 					url: '../addAddress/index'
+				})
+			},
+			// 跳转修改收货地址页面
+			toModifyAddress: function(id) {
+				uni.navigateTo({
+					url: '../modifyAddress/index?id=' + id
 				})
 			}
 		}

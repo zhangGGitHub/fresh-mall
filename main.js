@@ -9,7 +9,9 @@ import uniFly from 'unifly';
 
 // uniFly.baseUrl = 'https://dfl.yinshangjituan.com/app';
 
-uniFly.baseUrl = 'http://281s5457y3.qicp.vip:40272/app';
+uniFly.baseUrl = 'http://adzcc.com:9999/app';
+
+// uniFly.baseUrl = 'http://281s5457y3.qicp.vip:40272/app';
 
 
 

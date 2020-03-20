@@ -40,6 +40,12 @@
 			}
 		},
 		{
+			"path": "pages/modifyAddress/index",
+			"style": {
+				"navigationBarTitleText": "修改收货地址"
+			}
+		},
+		{
 			"path": "pages/orderList/index",
 			"style": {
 				"navigationBarTitleText": "订单列表"
