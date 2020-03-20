@@ -2,10 +2,12 @@
 	<view>
 		<view class="bg-white">
 			<view class="padding text-white head">
-				<view class="text-bold text-xxl margin-bottom-xl">
-					<text>众惠物联网科技有限公司</text>
-					<text class="cuIcon-triangledownfill" />
-				</view>
+				<picker mode="selector" :range="shopNameList" :value="selectShopIndex" @change="changeShopList">
+					<view class="text-bold text-xxl margin-bottom-xl">
+						<text>{{selectShopDetail==null ? '请选择商铺':selectShopDetail.shopsName}}</text>
+						<text class="cuIcon-triangledownfill" />
+					</view>
+				</picker>
 				<view class="card flex justify-between">
 					<view @click="jumpToPayPage()">
 						<text class="cuIcon-refund" />
@@ -19,7 +21,9 @@
 			</view>
 			<view class="padding flex align-center">
 				<text class="cuIcon-location text-blue" />
-				<text class="text-grey text-cut margin-left-xs" style="flex: 1;">地址地址地址地址地址地址地址地址地址地址地址地址</text>
+				<text class="text-grey text-cut margin-left-xs" style="flex: 1;">
+					{{selectShopDetail.province}}{{selectShopDetail.city}}{{selectShopDetail.county}}{{selectShopDetail.address}}
+				</text>
 			</view>
 		</view>
 		<view class="margin-top-sm padding bg-white">
@@ -28,7 +32,7 @@
 				<text class="cuIcon-unfold text-grey" style="display: inline-block;transform: rotate(-90deg);" />
 			</view>
 			<view class="margin-top-sm text-black">
-				内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容
+				{{selectShopDetail==null ? '请先选择商铺':selectShopDetail.shopsName+'的公告'}}
 			</view>
 		</view>
 		<view class="margin-top-sm padding bg-white flex">
@@ -79,10 +83,54 @@
 	export default {
 		data() {
 			return {
-
+				// 是否登录
+				isLogin: false,
+				// 商铺列表 - 原数据
+				shopList: [],
+				// 商铺名称列表 - piker数据
+				shopNameList: [],
+				// 选择的商铺详情
+				selectShopDetail: null,
+				// 选择的商铺下标
+				selectShopIndex: 0
 			}
 		},
+		onLoad: function() {
+			this.isLogin = uni.getStorageSync('isLogin')
+			this.getShopList()
+			if (uni.getStorageSync('selectShopDetail')) {
+				this.selectShopDetail = uni.getStorageSync('selectShopDetail')
+				this.selectShopIndex = uni.getStorageSync('selectShopIndex')
+			}
+		},
+		onShow: function() {
+			this.isLogin = uni.getStorageSync('isLogin')
+		},
 		methods: {
+			// 获取商铺列表
+			getShopList: function() {
+				this.uniFly.post({
+					url: '/shops/shops/list'
+				}).then(res => {
+					console.log('获取商铺列表', res)
+					if (res.data.code == 0) {
+						this.shopList = res.data.rows
+						res.data.rows.forEach(r => {
+							this.shopNameList.push(r.shopsName)
+						})
+					} else {
+						Toast(res.data.msg)
+					}
+				})
+			},
+			//选择商铺
+			changeShopList: function(e) {
+				console.log('切换商铺', e)
+				this.selectShopIndex = e.detail.value
+				this.selectShopDetail = this.shopList[e.detail.value]
+				uni.setStorageSync('selectShopDetail', this.shopList[e.detail.value])
+				uni.setStorageSync('selectShopIndex', e.detail.value)
+			},
 			// 跳转支付页面
 			jumpToPayPage: function() {
 				uni.switchTab({

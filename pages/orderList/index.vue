@@ -47,22 +47,47 @@
 				</view>
 			</view>
 		</view>
+		<van-toast id="van-toast" />
+		<van-dialog id="van-dialog" />
 	</view>
 </template>
 
 <script>
+	import Toast from '../../wxcomponents/vant/toast/toast.js';
+	import Dialog from '../../wxcomponents/vant/dialog/dialog.js';
 	export default {
 		data() {
 			return {
-				activeIndex: 0
+				// tabs的下标
+				activeIndex: 0,
+				// 全部订单列表
+				orderListAll: []
 			}
 		},
 		onLoad: function(options) {
 			if (options.active) {
 				this.activeIndex = Number(options.active)
 			}
+			// 获取订单
+			this.getOrderList()
 		},
 		methods: {
+			// 获取订单列表
+			getOrderList: function() {
+				this.uniFly.post({
+					url: '/shops/order/list',
+					params: {
+						userId: uni.getStorageSync('userInfo').userId
+					}
+				}).then(res => {
+					console.log('全部订单列表', res)
+					if (res.data.code == 0) {
+
+					} else {
+						Toast(res.data.msg)
+					}
+				})
+			},
 			// 切换标签栏
 			changeTabs: function(e) {
 				this.activeIndex = e.detail.index

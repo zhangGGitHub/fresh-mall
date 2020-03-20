@@ -2,6 +2,28 @@
 	export default {
 		onLaunch: function() {
 			console.log('App Launch')
+			if (!uni.getStorageSync('isLogin')) {
+				uni.setStorageSync('isLogin', false)
+			}
+			// 检查是否有token 有的话检查token是否失效 没有就重新登录
+			if (uni.getStorageSync('token')) {
+				this.uniFly.post({
+					url: '/user/checkToken',
+					params: {
+						token: uni.getStorageSync('token')
+					}
+				}).then(res => {
+					console.log('检测token是否失效', res)
+					if (res.data.code == 0) {
+						uni.setStorageSync('isLogin', true)
+					} else {
+						uni.setStorageSync('isLogin', false)
+						uni.removeStorageSync('token')
+					}
+				})
+			} else {
+				uni.setStorageSync('isLogin', false)
+			}
 		},
 		onShow: function() {
 			console.log('App Show')

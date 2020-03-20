@@ -6,11 +6,11 @@
 					付款给商家
 				</view>
 				<view class="padding-top-xs text-gray text-bold">
-					名称：众惠物联网公司
+					名称：{{shopDetail.shopsName}}
 				</view>
 			</view>
 			<view>
-				<image src="https://dummyimage.com/300x230/61B5FF" />
+				<image :src="shopDetail.shopsImage" />
 			</view>
 		</view>
 		<view class="money padding">
@@ -37,7 +37,14 @@
 				// 输入的金额
 				money: '',
 				// 是否点击输入
-				isActive: false
+				isActive: false,
+				// 商家详情
+				shopDetail: {}
+			}
+		},
+		onLoad: function() {
+			if (uni.getStorageSync('selectShopDetail')) {
+				this.shopDetail = uni.getStorageSync('selectShopDetail')
 			}
 		},
 		methods: {

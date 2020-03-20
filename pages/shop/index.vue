@@ -4,28 +4,29 @@
 			<van-search placeholder="请输入搜索关键词" shape="round" />
 		</view>
 		<scroll-view scroll-y scroll-with-animation class="tab-view" :scroll-top="scrollTop">
-			<view v-for="(item,index) in tabbar" :key="index" class="tab-bar-item" :class="[currentTab==index ? 'active' : '']"
+			<view v-for="(item,index) in commodityGroup" :key="index" class="tab-bar-item" :class="[commodityGroupIndex==index ? 'active' : '']"
 			 :data-current="index" @tap.stop="swichNav">
-				<text>{{item.name}}</text>
+				<text>{{item.typeName}}</text>
 			</view>
 		</scroll-view>
 
 		<scroll-view scroll-y class="right-box">
-			<block v-for="(item,index) in tabbar[currentTab].list" :key="index">
+			<block v-for="(item,index) in commodityGroup[commodityGroupIndex].goods" :key="index">
 				<view class="padding-top-xs flex">
 					<view>
-						<image src="https://dummyimage.com/100x100/red" style="width: 140rpx;height: 140rpx;" />
+						<image :src="item.goodsImage" style="width: 140rpx;height: 140rpx;" />
 					</view>
 					<view class="padding-left-xs flex flex-direction padding-right" style="flex: 1;">
-						<view>{{item.name}}</view>
-						<view class="text-gray text-sm">销量{{item.num1}} 库存{{item.num2}}</view>
+						<view>{{item.goodsName}}</view>
+						<view class="text-gray text-sm">销量{{item.sellNum}} 库存{{item.stock}}</view>
 						<view class="flex justify-between align-center" style="margin-top: auto;">
 							<text class="text-price">{{item.price}}</text>
-							<view v-if="num!=0">
-								<van-stepper :value="num" :min="0" @minus="num--" @plus="num++" />
+							<view v-if="item.num!=0">
+								<van-stepper :value="item.num" :disable-input="true" :long-press="false" :min="0" @minus="goodsLessNum(index)"
+								 @plus="goodsAddNum(index)" />
 							</view>
 							<view v-else>
-								<view class="num" @click="num++"></view>
+								<view class="num" @click="goodsAddNum(index)"></view>
 							</view>
 						</view>
 					</view>
@@ -33,62 +34,122 @@
 			</block>
 		</scroll-view>
 		<view>
-			<van-submit-bar :price="3050" button-text="提交订单">
+			<van-submit-bar :price="totalPrice*100" :disabled="totalPrice==0 ? true:false" button-text="提交订单" button-type="info"
+			 @submit="isShowShopCar=true">
 				<view @click="isShowShopCar=true">
 					<image src="../../static/shopcart.png" style="width: 80rpx;height: 80rpx;margin-left:50rpx;" />
 				</view>
 			</van-submit-bar>
 		</view>
-		<van-popup :show="isShowShopCar" position="bottom" custom-style="height: 20%;" @click-overlay='isShowShopCar=false' round />
+		<van-popup :show="isShowShopCar" position="bottom" @click-overlay="isShowShopCar=false" round>
+			<view class="padding">
+				<view class="padding-bottom text-center text-bold text-xl">已购商品</view>
+				<view class="flex align-center justify-between padding-bottom-xs padding-left-xs padding-right-xs" style="font-size: 30rpx;"
+				 v-for="(item,index) in selectCommodityList" :key="index">
+					<text>{{item.goodsName}}</text>
+					<text>单价：<text class="text-price text-orange">{{item.price}}</text></text>
+					<text>数量：x{{item.num}}</text>
+					<!-- <text>总价：<text class="text-price text-red">{{item.price * item.num}}</text></text> -->
+				</view>
+				<view class="padding-top flex justify-end">
+					<van-button type="info" size="normal">确认付款</van-button>
+				</view>
+			</view>
+		</van-popup>
+		<van-toast id="van-toast" />
+		<van-dialog id="van-dialog" />
 	</view>
 </template>
 
 <script>
+	import Toast from '../../wxcomponents/vant/toast/toast.js';
+	import Dialog from '../../wxcomponents/vant/dialog/dialog.js';
 	export default {
 		data() {
 			return {
-				tabbar: [{
-					name: '推荐套餐',
-					list: [{
-						name: '肉类套餐1',
-						id: '0',
-						price: '328.00',
-						num1: '4',
-						num2: '500'
-					}]
-				}, {
-					name: '团购套餐',
-					list: [{
-						name: '蔬菜套餐1',
-						id: '0',
-						price: '50.00',
-						num1: '1',
-						num2: '499'
-					}, {
-						name: '蔬菜套餐2',
-						id: '1',
-						price: '98.00',
-						num1: '0',
-						num2: '999'
-					}]
-				}],
-				currentTab: 0, //预设当前项的值
-				scrollTop: 0, //tab标题的滚动条位置
-				num: 0,
-				isShowShopCar:false
+				// 商品的分类
+				commodityGroup: [],
+				// 选择的商品分类下标 默认第一个
+				commodityGroupIndex: 0,
+				// tab标题的滚动条位置
+				scrollTop: 0,
+				// 总价格
+				totalPrice: 0,
+				// 选择的商品
+				selectCommodityList: [],
+				// 是否展示弹出层
+				isShowShopCar: false
 			}
 		},
-		onLoad: function(options) {
-
+		onLoad: function() {
+			if (uni.getStorageSync('selectShopDetail')) {
+				this.getCommodityGroup(uni.getStorageSync('selectShopDetail').id)
+			} else {
+				this.commodityGroup = []
+				Dialog.alert({
+					title: '提示',
+					message: '检测到未选择商铺,请先选择商铺'
+				}).then(() => {
+					uni.switchTab({
+						url: '../index/index'
+					})
+				})
+			}
+		},
+		watch: {
+			commodityGroup: { //监听的对象
+				deep: true, //深度监听设置为 true
+				handler: function(e) {
+					var price = 0
+					var arr = []
+					e.forEach(r => {
+						r.goods.forEach(rr => {
+							arr.push(rr)
+							price += rr.num * rr.price
+						})
+					})
+					this.selectCommodityList = arr.filter(r => {
+						return r.num != 0
+					})
+					this.totalPrice = price
+				}
+			}
 		},
 		methods: {
+			// 商品加数量
+			goodsAddNum: function(e) {
+				var that = this
+				this.commodityGroup[this.commodityGroupIndex].goods[e].num++
+			},
+			// 商品减数量
+			goodsLessNum: function(e) {
+				this.commodityGroup[this.commodityGroupIndex].goods[e].num--
+
+			},
+			// 获取商品和分类
+			getCommodityGroup: function(id) {
+				this.uniFly.post({
+					url: '/shops/goods/selectGoods',
+					params: {
+						shopsId: id
+					}
+				}).then(res => {
+					console.log('商品分类', res)
+					res.data.data.forEach(r => {
+						r.goods.forEach(rr => {
+							rr.num = 0
+						})
+					})
+					this.commodityGroup = res.data.data
+				})
+			},
 			// 点击标题切换当前页时改变样式
 			swichNav: function(e) {
 				let cur = e.currentTarget.dataset.current;
-				if (this.currentTab == cur) {
+				if (this.commodityGroupIndex == cur) {
 					return false;
 				} else {
-					this.currentTab = cur;
+					this.commodityGroupIndex = cur;
 					this.checkCor();
 				}
 			},
@@ -98,7 +159,7 @@
 				//这里计算按照实际情况进行修改，动态数据要进行动态分析
 				//思路：窗体高度/单个分类高度 200rpx 转px计算 =>得到一屏幕所显示的个数，结合后台传回分类总数进行计算
 				//数据很多可以多次if判断然后进行滚动距离计算即可
-				if (that.currentTab > 7) {
+				if (that.commodityGroupIndex > 7) {
 					that.scrollTop = 500
 				} else {
 					that.scrollTop = 0
@@ -204,6 +265,7 @@
 		width: 9px;
 		height: 1px;
 	}
+
 	.num::after {
 		position: absolute;
 		top: 0;
