@@ -36,7 +36,7 @@
 				// 地址列表
 				addressList: [],
 				// 默认地址下标
-				addressDefaultIndex: 0
+				addressDefaultIndex: -1
 			}
 		},
 		onLoad: function() {
@@ -44,6 +44,7 @@
 		},
 		onShow: function() {
 			this.getAddressList()
+			this.addressDefaultIndex = -1
 		},
 		methods: {
 			// 获取所有地址列表
@@ -79,20 +80,22 @@
 			// 切换默认地址
 			changeDefault: function(index) {
 				var that = this
-				this.uniFly.post({
-					url: '/addr/setDefault',
-					params: {
-						bookId: this.addressList[index].id
-					}
-				}).then(res => {
-					console.log('设置默认地址', res)
-					if (res.data.code == 0) {
-						Toast('设置默认地址成功')
-						that.addressDefaultIndex = index
-					} else {
-						Toast(res.data.msg)
-					}
-				})
+				if (this.addressList[index].isDefaultAddress == 0) {
+					this.uniFly.post({
+						url: '/addr/setDefault',
+						params: {
+							bookId: this.addressList[index].id
+						}
+					}).then(res => {
+						console.log('设置默认地址', res)
+						if (res.data.code == 0) {
+							Toast('设置默认地址成功')
+							that.addressDefaultIndex = index
+						} else {
+							Toast(res.data.msg)
+						}
+					})
+				}
 			},
 			// 跳转新增收货地址
 			addAddress: function() {

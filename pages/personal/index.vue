@@ -20,20 +20,24 @@
 			</view>
 			<view class="padding flex justify-around align-center" style="padding-bottom: 0;">
 				<view class="flex flex-direction align-center" @click="toOrederList(1)">
-					<text class="cuIcon-sponsor icon" />
-					<text class="text">待支付</text>
+					<text class="cuIcon-cart icon" />
+					<text class="text">未支付</text>
 				</view>
 				<view class="flex flex-direction align-center" @click="toOrederList(2)">
-					<text class="cuIcon-cart icon" />
-					<text class="text">待发货</text>
+					<text class="cuIcon-sponsor icon" />
+					<text class="text">已支付</text>
 				</view>
 				<view class="flex flex-direction align-center" @click="toOrederList(3)">
 					<text class="cuIcon-goodsnew icon" />
-					<text class="text">待收货</text>
+					<text class="text">已发货</text>
+				</view>
+				<view class="flex flex-direction align-center" @click="toOrederList(4)">
+					<text class="cuIcon-deliver icon" />
+					<text class="text">已退货</text>
 				</view>
 			</view>
 		</view>
-		<view class="money bg-white radius shadow flex justify-between">
+		<view class="money bg-white radius shadow flex justify-between" @click="showToast">
 			<view class="flex flex-direction align-center">
 				<text class="text-black text-bold text-xl">0</text>
 				<text class="padding-top-xs text-sm">优惠券</text>
@@ -54,9 +58,11 @@
 		<view class="list bg-white radius shadow">
 			<van-cell-group>
 				<van-cell title="地址管理" is-link @click="toAddressList" />
-				<van-cell title="分享" is-link />
+				<van-cell title="更多" is-link @click="isShowActionSheet = true" />
 			</van-cell-group>
 		</view>
+		<van-action-sheet cancel-text="取消" :show="isShowActionSheet" :actions="actions" @close="isShowActionSheet=false"
+		 @cancel="isShowActionSheet=false" />
 		<van-toast id="van-toast" />
 		<van-dialog id="van-dialog" />
 	</view>
@@ -73,7 +79,14 @@
 				// 临时登录凭证
 				code: '',
 				// 用户微信信息
-				userDetailWx: {}
+				userDetailWx: {},
+				// 分享上拉菜单
+				isShowActionSheet: false,
+				// 上拉菜单的内容
+				actions: [{
+					name: '分享',
+					openType: 'share'
+				}]
 			}
 		},
 		onLoad: function() {
@@ -98,7 +111,16 @@
 			getUserInfo: function(e) {
 				var that = this
 				if (e.detail.errMsg == 'getUserInfo:ok') {
+					var code = ''
 					console.log('用户点击登录', e)
+					if (this.code == '') {
+						// 获取临时code
+						uni.login({
+							success: (e) => {
+								code = e.code
+							}
+						})
+					}
 					this.userDetailWx = e.detail.userInfo
 					Toast.loading({
 						mask: true,
@@ -110,7 +132,7 @@
 						params: {
 							iv: e.detail.iv,
 							encryptedData: e.detail.encryptedData,
-							code: that.code
+							code: that.code == '' ? code : that.code
 						}
 					}).then(res => {
 						console.log('解密openid', res)
@@ -160,10 +182,30 @@
 			},
 			// 跳转订单列表
 			toOrederList: function(index) {
-				uni.navigateTo({
-					url: '../orderList/index?active=' + index
-				})
+				if (this.isLogin) {
+					if (uni.getStorageSync('selectShopDetail')) {
+						// 0:全部 1:未支付 2:已支付 3:已发货 4:已退货
+						uni.navigateTo({
+							url: '../orderList/index?active=' + index
+						})
+					} else {
+						Dialog.alert({
+							title: '提示',
+							message: '请先选择商铺'
+						}).then(() => {
+							uni.switchTab({
+								url: '../index/index'
+							})
+						})
+					}
+				} else {
+					Toast('请先登录')
+				}
 			},
+			// 点击优惠券等
+			showToast: function() {
+				Toast('敬请期待')
+			}
 		}
 	}
 </script>

@@ -21,7 +21,10 @@
 			</view>
 			<view class="padding flex align-center">
 				<text class="cuIcon-location text-blue" />
-				<text class="text-grey text-cut margin-left-xs" style="flex: 1;">
+				<text v-if="selectShopDetail==null">
+					请先选择商铺
+				</text>
+				<text v-else class="text-grey text-cut margin-left-xs" style="flex: 1;">
 					{{selectShopDetail.province}}{{selectShopDetail.city}}{{selectShopDetail.county}}{{selectShopDetail.address}}
 				</text>
 			</view>
@@ -32,7 +35,7 @@
 				<text class="cuIcon-unfold text-grey" style="display: inline-block;transform: rotate(-90deg);" />
 			</view>
 			<view class="margin-top-sm text-black">
-				{{selectShopDetail==null ? '请先选择商铺':selectShopDetail.shopsName+'的公告'}}
+				{{selectShopDetail==null ? '请先选择商铺':selectShopDetail.reserve2}}
 			</view>
 		</view>
 		<view class="margin-top-sm padding bg-white flex">
@@ -62,7 +65,7 @@
 		<view class="margin-top-sm padding bg-white">
 			<view class="text-lg text-black text-bold">热销推荐</view>
 			<view class="margin-top-sm text-black flex align-center justify-around">
-				<view v-for="(item,index) in 3" :key="index" style="width: 32%;">
+				<view v-for="(item,index) in 3" :key="index" style="width: 32%;" @click="toShop">
 					<image src="https://dummyimage.com/300x230/61B5FF" style="width: 100%;height: 200rpx;border-radius: 10rpx;" />
 					<p class="text-bold">蔬菜套餐{{index}}</p>
 					<p class="text-sm padding-top-xs padding-bottom-xs">销量{{index}}</p>
@@ -96,19 +99,29 @@
 			}
 		},
 		onLoad: function() {
+			// 检查是否登录
 			this.isLogin = uni.getStorageSync('isLogin')
-			this.getShopList()
+			// 如果之前选择过商铺 拿到 默认信息/热销商品 并更新已存储的商铺
 			if (uni.getStorageSync('selectShopDetail')) {
 				this.selectShopDetail = uni.getStorageSync('selectShopDetail')
-				this.selectShopIndex = uni.getStorageSync('selectShopIndex')
+				// 更新已存的商铺信息
+				// this.updateShopDetail(uni.getStorageSync('selectShopDetail').id)
+				// 获取热销商品
+				this.getHotShop(uni.getStorageSync('selectShopDetail').id)
 			}
 		},
 		onShow: function() {
+			// 检查是否登录
 			this.isLogin = uni.getStorageSync('isLogin')
+			// 获取商铺列表
+			this.getShopList()
 		},
 		methods: {
 			// 获取商铺列表
 			getShopList: function() {
+				var that = this
+				this.shopList = []
+				this.shopNameList = []
 				this.uniFly.post({
 					url: '/shops/shops/list'
 				}).then(res => {
@@ -118,18 +131,48 @@
 						res.data.rows.forEach(r => {
 							this.shopNameList.push(r.shopsName)
 						})
+						if (uni.getStorageSync('selectShopDetail')) {
+							for (var i = 0; i < res.data.rows.length; i++) {
+								if (res.data.rows[i].id == uni.getStorageSync('selectShopDetail').id) {
+									that.selectShopIndex = i
+									return
+								}
+							}
+						}
 					} else {
 						Toast(res.data.msg)
 					}
 				})
 			},
+			// 更新已存的商铺信息
+			// updateShopDetail: function(e) {
+			// 	this.uniFly.post({
+			// 		url: '/shops/shops/list',
+			// 		params: {
+			// 			id: e
+			// 		}
+			// 	}).then(res => {
+			// 		console.log('已选择,更新商铺信息', res)
+			// 	})
+			// },
 			//选择商铺
 			changeShopList: function(e) {
 				console.log('切换商铺', e)
 				this.selectShopIndex = e.detail.value
 				this.selectShopDetail = this.shopList[e.detail.value]
 				uni.setStorageSync('selectShopDetail', this.shopList[e.detail.value])
-				uni.setStorageSync('selectShopIndex', e.detail.value)
+				this.getHotShop(this.shopList[e.detail.value].id)
+			},
+			// 获取首页热销商品
+			getHotShop: function(id) {
+				this.uniFly.post({
+					url: '/shops/goods/selectGoods',
+					params: {
+						shopsId: id
+					}
+				}).then(res => {
+					console.log('商品分类', res)
+				})
 			},
 			// 跳转支付页面
 			jumpToPayPage: function() {
@@ -150,6 +193,12 @@
 			// 跳转我的会员卡页面
 			toMyVip: function() {
 				Toast('敬请期待')
+			},
+			// 跳转商品页面
+			toShop: function() {
+				uni.switchTab({
+					url: '../shop/index'
+				})
 			}
 		}
 	}

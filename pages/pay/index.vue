@@ -23,11 +23,15 @@
 			</view>
 		</view>
 		<keyboard @money="getMoney" />
+		<van-toast id="van-toast" />
+		<van-dialog id="van-dialog" />
 	</view>
 </template>
 
 <script>
 	import keyboard from '../../components/keyboard/index.vue'
+	import Toast from '../../wxcomponents/vant/toast/toast.js';
+	import Dialog from '../../wxcomponents/vant/dialog/dialog.js';
 	export default {
 		components: {
 			keyboard
@@ -45,6 +49,29 @@
 		onLoad: function() {
 			if (uni.getStorageSync('selectShopDetail')) {
 				this.shopDetail = uni.getStorageSync('selectShopDetail')
+			} else {
+				Dialog.alert({
+					title: '提示',
+					message: '请先选择商铺'
+				}).then(() => {
+					uni.switchTab({
+						url: '../index/index'
+					})
+				})
+			}
+		},
+		onShow: function() {
+			if (uni.getStorageSync('selectShopDetail')) {
+				this.shopDetail = uni.getStorageSync('selectShopDetail')
+			} else {
+				Dialog.alert({
+					title: '提示',
+					message: '请先选择商铺'
+				}).then(() => {
+					uni.switchTab({
+						url: '../index/index'
+					})
+				})
 			}
 		},
 		methods: {

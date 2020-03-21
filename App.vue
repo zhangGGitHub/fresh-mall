@@ -40,7 +40,8 @@
 	@import "colorui/icon.css";
 
 	.van-submit-bar__text {
-		text-align: center !important;
+		text-align: left !important;
+		padding-left: 50rpx;
 	}
 
 	.shadow_btn {

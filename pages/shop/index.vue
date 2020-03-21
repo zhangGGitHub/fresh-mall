@@ -22,11 +22,11 @@
 						<view class="flex justify-between align-center" style="margin-top: auto;">
 							<text class="text-price">{{item.price}}</text>
 							<view v-if="item.num!=0">
-								<van-stepper :value="item.num" :disable-input="true" :long-press="false" :min="0" @minus="goodsLessNum(index)"
-								 @plus="goodsAddNum(index)" />
+								<van-stepper :value="item.num" :disable-input="true" :long-press="false" :min="0" @minus="goodsLessNum(item.id)"
+								 @plus="goodsAddNum(item.id)" />
 							</view>
 							<view v-else>
-								<view class="num" @click="goodsAddNum(index)"></view>
+								<view class="num" @click="goodsAddNum(item.id)"></view>
 							</view>
 						</view>
 					</view>
@@ -35,27 +35,42 @@
 		</scroll-view>
 		<view>
 			<van-submit-bar :price="totalPrice*100" :disabled="totalPrice==0 ? true:false" button-text="提交订单" button-type="info"
-			 @submit="isShowShopCar=true">
-				<view @click="isShowShopCar=true">
-					<image src="../../static/shopcart.png" style="width: 80rpx;height: 80rpx;margin-left:50rpx;" />
-				</view>
-			</van-submit-bar>
+			 @submit="isShowShopCar=true" />
 		</view>
-		<van-popup :show="isShowShopCar" position="bottom" @click-overlay="isShowShopCar=false" round>
+		<van-popup :show="isShowShopCar" position="bottom" @click-overlay="isShowShopCar=false">
 			<view class="padding">
 				<view class="padding-bottom text-center text-bold text-xl">已购商品</view>
-				<view class="flex align-center justify-between padding-bottom-xs padding-left-xs padding-right-xs" style="font-size: 30rpx;"
+				<view class="flex align-center justify-between padding-bottom padding-left-xs padding-right-xs" style="font-size: 30rpx;"
 				 v-for="(item,index) in selectCommodityList" :key="index">
-					<text>{{item.goodsName}}</text>
-					<text>单价：<text class="text-price text-orange">{{item.price}}</text></text>
-					<text>数量：x{{item.num}}</text>
-					<!-- <text>总价：<text class="text-price text-red">{{item.price * item.num}}</text></text> -->
+					<view style="width: 33%;">{{item.goodsName}}</view>
+					<view style="width: 33%;">单价：<text class="text-price text-orange">{{item.price}}</text></view>
+					<view class="text-center" style="width: 33%;">数量：x{{item.num}}</view>
 				</view>
-				<view class="padding-top flex justify-end">
+				<view style="border-top: 2rpx solid #F1F1F1;" v-if="isDefaultAddress">
+					<view class="padding-bottom padding-top flex align-center justify-between">
+						<view>配送至默认收货地址:</view>
+						<view @click="toModify">
+							<van-tag plain type="primary" size="medium">去更改</van-tag>
+						</view>
+					</view>
+					<view class="address1" style="flex: 1;padding: 20rpx 0 20rpx 20rpx;">
+						<view class="flex align-center">
+							<view>收货人：{{defaultAddress.consignee}}</view>
+							<view class="margin-left">手机号：{{defaultAddress.phoneNumber}}</view>
+						</view>
+						<view class="padding-top-xs">
+							地址：{{defaultAddress.city}}-{{defaultAddress.shippingAddress}}
+						</view>
+					</view>
+				</view>
+				<view class="padding-top-sm flex justify-center">
 					<van-button type="info" size="normal" @click="confirmPay">确认付款</van-button>
 				</view>
 			</view>
 		</van-popup>
+		<van-dialog use-slot title="长按保存二维码" :show="isShowQrCodeDialog">
+			<image @longpress="saveQrCode" :src="payQrcode" />
+		</van-dialog>
 		<van-toast id="van-toast" />
 		<van-dialog id="van-dialog" />
 	</view>
@@ -77,8 +92,16 @@
 				totalPrice: 0,
 				// 选择的商品
 				selectCommodityList: [],
+				// 是否设置默认收货地址
+				isDefaultAddress: false,
+				// 默认收货地址
+				defaultAddress: {},
 				// 是否展示弹出层
-				isShowShopCar: false
+				isShowShopCar: false,
+				// 显示支付二维码
+				isShowQrCodeDialog: false,
+				// 支付二维码base64
+				payQrcode: ''
 			}
 		},
 		onLoad: function() {
@@ -94,6 +117,14 @@
 						url: '../index/index'
 					})
 				})
+			}
+		},
+		onShow: function() {
+			if (uni.getStorageSync('isLogin')) {
+				this.checkDefaultAddress()
+			}
+			if (uni.getStorageSync('selectShopDetail') && this.totalPrice == 0) {
+				this.getCommodityGroup(uni.getStorageSync('selectShopDetail').id)
 			}
 		},
 		watch: {
@@ -118,16 +149,35 @@
 		methods: {
 			// 点击确认付款 --> 检查是否登录 --> 检查有没有默认收货地址 --> 生成订单 --> 支付
 			confirmPay: function() {
+				var that = this
+				// 检查是否登录
 				if (uni.getStorageSync('isLogin')) {
-					this.uniFly.post({
-						url: '/addr/getDefault',
-						params: {
-							userId: uni.getStorageSync('userInfo').userId
-						}
-					}).then(res => {
-						console.log('查询默认地址', res)
-					})
+					// 检查有没有默认地址
+					if (this.isDefaultAddress) {
+						this.isShowShopCar = false
+						Toast.loading({
+							duration: 0,
+							mask: true,
+							message: '生成订单'
+						})
+						// 获取订单号
+						this.getOrderNumber()
+					} else {
+						this.isShowShopCar = false
+						Dialog.confirm({
+							title: '提示',
+							message: '检测到未设置收货地址',
+							confirmButtonText: '去设置'
+						}).then(() => {
+							uni.navigateTo({
+								url: '../addressList/index'
+							})
+						}).catch(() => {
+							Dialog.close()
+						})
+					}
 				} else {
+					this.isShowShopCar = false
 					Dialog.alert({
 						title: '提示',
 						message: '请先登录'
@@ -138,15 +188,156 @@
 					})
 				}
 			},
+			// 上传商品获取订单号
+			getOrderNumber: function() {
+				var that = this
+				var detail = []
+				this.selectCommodityList.forEach(r => {
+					detail.push({
+						goodsId: r.id,
+						goodsName: r.goodsName,
+						goodsImage: r.goodsImage,
+						num: r.num
+					})
+				})
+				this.uniFly.post({
+					url: '/shops/order/add',
+					params: {
+						userId: uni.getStorageSync('userInfo').userId,
+						shopsId: uni.getStorageSync('selectShopDetail').id,
+						orderUser: that.defaultAddress.consignee,
+						phone: that.defaultAddress.phoneNumber,
+						payDictionary: 'shopsPay',
+						reserve1: that.defaultAddress.city + '-' + that.defaultAddress.shippingAddress,
+						details: detail
+					},
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}).then(res => {
+					console.log('获取订单号', res)
+					if (res.data.code == 0) {
+						Toast.loading({
+							duration: 0,
+							mask: true,
+							message: '生成支付码'
+						})
+						that.createQrCode(res.data.data.orderNo)
+					} else {
+						Toast(res.data.msg)
+					}
+				})
+			},
+			// 生成建行聚合支付码
+			createQrCode: function(orderNo) {
+				var that = this
+				this.uniFly.post({
+					url: '/shops/order/createQrCode',
+					params: {
+						userId: uni.getStorageSync('userInfo').userId,
+						totalPrice: this.totalPrice.toFixed(2),
+						orderNo: orderNo,
+						payDictionary: 'shopsPay'
+					}
+				}).then(res => {
+					console.log('生成建行聚合二维码', res)
+					if (res.data.code == 0) {
+						that.payQrcode = 'data:image/png;base64,' + res.data.data.payCode
+						that.isShowQrCodeDialog = true
+					} else {
+						Toast(res.data.msg)
+					}
+				})
+			},
+			// 长按保存二维码
+			saveQrCode: function() {
+				uni.getSetting({
+					success: (res) => {
+						if (!res.authSetting['scope.writePhotosAlbum']) {
+							console.log('未授权')
+							uni.authorize({
+								scope: 'scope.writePhotosAlbum',
+								success: function() {
+									console.log('用户点击了授权')
+									console.log('保存图片至本地')
+								},
+								fail: function() {
+									console.log('用户拒绝了授权')
+									uni.showModal({
+										title: '提示',
+										content: '若点击不授权，将无法使用保存图片功能',
+										cancelText: '不授权',
+										cancelColor: '#999',
+										confirmText: '授权',
+										confirmColor: '#f94218',
+										success: (e) => {
+											if (e.confirm) {
+												uni.openSetting()
+											}
+										}
+									})
+								}
+							})
+						} else {
+							console.log('保存图片至本地')
+						}
+					}
+				})
+
+
+			},
+			// 查询默认地址
+			checkDefaultAddress: function() {
+				var that = this
+				this.uniFly.post({
+					url: '/addr/getDefault',
+					params: {
+						userId: uni.getStorageSync('userInfo').userId
+					}
+				}).then(res => {
+					console.log('查询默认地址', res)
+					if (res.data.code == 0) {
+						if (res.data.data) {
+							that.isDefaultAddress = true
+							that.defaultAddress = res.data.data
+						} else {
+							that.isDefaultAddress = false
+						}
+					} else {
+						that.isDefaultAddress = false
+						Toast(res.data.msg)
+					}
+				})
+			},
+			// 修改配送地址
+			toModify: function() {
+				uni.navigateTo({
+					url: '../addressList/index'
+				})
+			},
 			// 商品加数量
 			goodsAddNum: function(e) {
 				var that = this
-				this.commodityGroup[this.commodityGroupIndex].goods[e].num++
+				// this.commodityGroup[this.commodityGroupIndex].goods[e].num++
+				for (var i = 0; i < this.commodityGroup.length; i++) {
+					for (var j = 0; j < this.commodityGroup[i].goods.length; j++) {
+						if (this.commodityGroup[i].goods[j].id == e) {
+							this.commodityGroup[i].goods[j].num++
+						}
+					}
+				}
 			},
 			// 商品减数量
 			goodsLessNum: function(e) {
-				this.commodityGroup[this.commodityGroupIndex].goods[e].num--
-
+				var that = this
+				// this.commodityGroup[this.commodityGroupIndex].goods[e].num--
+				for (var i = 0; i < this.commodityGroup.length; i++) {
+					for (var j = 0; j < this.commodityGroup[i].goods.length; j++) {
+						if (this.commodityGroup[i].goods[j].id == e) {
+							this.commodityGroup[i].goods[j].num--
+						}
+					}
+				}
 			},
 			// 获取商品和分类
 			getCommodityGroup: function(id) {
@@ -191,7 +382,7 @@
 	}
 </script>
 
-<style>
+<style lang="scss">
 	page {
 		background: #fcfcfc;
 	}
@@ -299,5 +490,20 @@
 		content: "";
 		width: 1px;
 		height: 9px;
+	}
+
+	.address1 {
+		border: 2rpx solid #F6F6F6;
+
+		.modify1 {
+			width: 20%;
+			height: 130rpx;
+			line-height: 130rpx;
+			border-left: 2rpx solid #F6F6F6;
+		}
+
+		.modify1:active {
+			background-color: #F0F0F0;
+		}
 	}
 </style>

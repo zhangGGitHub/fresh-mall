@@ -88,7 +88,6 @@
 			},
 			// 选择城市
 			getCity: function(e) {
-				console.log(e.detail.value)
 				this.city = e.detail.value[0] + '-' + e.detail.value[1] + '-' + e.detail.value[2]
 			},
 			// 获取输入的姓名
