@@ -64,13 +64,13 @@
 		</view>
 		<view class="margin-top-sm padding bg-white">
 			<view class="text-lg text-black text-bold">热销推荐</view>
-			<view class="margin-top-sm text-black flex align-center justify-around">
-				<view v-for="(item,index) in 3" :key="index" style="width: 32%;" @click="toShop">
-					<image src="https://dummyimage.com/300x230/61B5FF" style="width: 100%;height: 200rpx;border-radius: 10rpx;" />
-					<p class="text-bold">蔬菜套餐{{index}}</p>
-					<p class="text-sm padding-top-xs padding-bottom-xs">销量{{index}}</p>
+			<view class="margin-top-sm text-black flex align-center justify-between">
+				<view v-for="(item,index) in shopHotList" :key="index" style="width: 32%;" @click="toShop">
+					<image :src="item.goodsImage" style="width: 100%;height: 200rpx;border-radius: 10rpx;" />
+					<p class="text-bold">{{item.goodsName}}</p>
+					<p class="text-sm padding-top-xs padding-bottom-xs">销量：{{item.sellNum}}</p>
 					<p>
-						<text class="text-price text-red">{{index}}.00</text>
+						<text class="text-price text-red">{{item.price}}</text>
 					</p>
 				</view>
 			</view>
@@ -95,7 +95,9 @@
 				// 选择的商铺详情
 				selectShopDetail: null,
 				// 选择的商铺下标
-				selectShopIndex: 0
+				selectShopIndex: 0,
+				// 热销商品
+				shopHotList: []
 			}
 		},
 		onLoad: function() {
@@ -103,9 +105,9 @@
 			this.isLogin = uni.getStorageSync('isLogin')
 			// 如果之前选择过商铺 拿到 默认信息/热销商品 并更新已存储的商铺
 			if (uni.getStorageSync('selectShopDetail')) {
-				this.selectShopDetail = uni.getStorageSync('selectShopDetail')
+				// this.selectShopDetail = uni.getStorageSync('selectShopDetail')
 				// 更新已存的商铺信息
-				// this.updateShopDetail(uni.getStorageSync('selectShopDetail').id)
+				this.updateShopDetail(uni.getStorageSync('selectShopDetail').id)
 				// 获取热销商品
 				this.getHotShop(uni.getStorageSync('selectShopDetail').id)
 			}
@@ -145,16 +147,22 @@
 				})
 			},
 			// 更新已存的商铺信息
-			// updateShopDetail: function(e) {
-			// 	this.uniFly.post({
-			// 		url: '/shops/shops/list',
-			// 		params: {
-			// 			id: e
-			// 		}
-			// 	}).then(res => {
-			// 		console.log('已选择,更新商铺信息', res)
-			// 	})
-			// },
+			updateShopDetail: function(e) {
+				this.uniFly.post({
+					url: '/shops/shops/selectById',
+					params: {
+						id: e
+					}
+				}).then(res => {
+					console.log('已选择,更新商铺信息', res)
+					if (res.data.code == 0) {
+						this.selectShopDetail = res.data.data
+						uni.setStorageSync('selectShopDetail', res.data.data)
+					} else {
+						Toast(res.data.msg)
+					}
+				})
+			},
 			//选择商铺
 			changeShopList: function(e) {
 				console.log('切换商铺', e)
@@ -172,6 +180,13 @@
 					}
 				}).then(res => {
 					console.log('商品分类', res)
+					if (res.data.code == 0) {
+						this.shopHotList = res.data.data.filter(r => {
+							return r.typeName == '热搜'
+						})[0].goods
+					} else {
+						Toast(res.data.msg)
+					}
 				})
 			},
 			// 跳转支付页面

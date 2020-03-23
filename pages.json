@@ -48,7 +48,8 @@
 		{
 			"path": "pages/orderList/index",
 			"style": {
-				"navigationBarTitleText": "订单列表"
+				"navigationBarTitleText": "订单列表",
+				"enablePullDownRefresh":true
 			}
 		}
 

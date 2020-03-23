@@ -68,8 +68,10 @@
 				</view>
 			</view>
 		</van-popup>
-		<van-dialog use-slot title="长按保存二维码" :show="isShowQrCodeDialog">
-			<image @longpress="saveQrCode" :src="payQrcode" />
+		<van-dialog use-slot title="长按保存二维码" :show="isShowQrCodeDialog" @confirm="isShowQrCodeDialog = false">
+			<view class="flex align-center justify-center">
+				<image @longpress="saveQrCode" :src="'data:image/png;base64,'+payQrcode" style="width:520rpx;height: 520rpx;" />
+			</view>
 		</van-dialog>
 		<van-toast id="van-toast" />
 		<van-dialog id="van-dialog" />
@@ -133,13 +135,28 @@
 				handler: function(e) {
 					var price = 0
 					var arr = []
+					// 所有商品放入arr中
 					e.forEach(r => {
 						r.goods.forEach(rr => {
 							arr.push(rr)
-							price += rr.num * rr.price
 						})
 					})
-					this.selectCommodityList = arr.filter(r => {
+					// 接收去重后的数据
+					var result = [];
+					// 判断去重
+					var obj = {};
+					// 去重
+					for (var i = 0; i < arr.length; i++) {
+						if (!obj[arr[i].id]) {
+							result.push(arr[i]);
+							obj[arr[i].id] = true;
+						}
+					}
+					// 去重后计算总价
+					result.forEach(r => {
+						price += r.num * r.price
+					})
+					this.selectCommodityList = result.filter(r => {
 						return r.num != 0
 					})
 					this.totalPrice = price
@@ -217,12 +234,19 @@
 				}).then(res => {
 					console.log('获取订单号', res)
 					if (res.data.code == 0) {
-						Toast.loading({
-							duration: 0,
-							mask: true,
-							message: '生成支付码'
-						})
-						that.createQrCode(res.data.data.orderNo)
+						// 1:中金支付  2:生成建行聚合码
+						if (uni.getStorageSync('selectShopDetail').reserve3 == 1) {
+							Toast('中金支付')
+						} else if (uni.getStorageSync('selectShopDetail').reserve3 == 2) {
+							Toast.loading({
+								duration: 0,
+								mask: true,
+								message: '建行聚合支付'
+							})
+							that.createQrCode(res.data.data.orderNo)
+						} else {
+							Toast('未知支付类型')
+						}
 					} else {
 						Toast(res.data.msg)
 					}
@@ -242,7 +266,8 @@
 				}).then(res => {
 					console.log('生成建行聚合二维码', res)
 					if (res.data.code == 0) {
-						that.payQrcode = 'data:image/png;base64,' + res.data.data.payCode
+						Toast.clear()
+						that.payQrcode = res.data.data.payCode.replace(/[\r\n]/g, '');
 						that.isShowQrCodeDialog = true
 					} else {
 						Toast(res.data.msg)
@@ -251,6 +276,7 @@
 			},
 			// 长按保存二维码
 			saveQrCode: function() {
+				var that = this
 				uni.getSetting({
 					success: (res) => {
 						if (!res.authSetting['scope.writePhotosAlbum']) {
@@ -259,7 +285,7 @@
 								scope: 'scope.writePhotosAlbum',
 								success: function() {
 									console.log('用户点击了授权')
-									console.log('保存图片至本地')
+									that.getTemporaryPath(that.payQrcode)
 								},
 								fail: function() {
 									console.log('用户拒绝了授权')
@@ -280,11 +306,35 @@
 							})
 						} else {
 							console.log('保存图片至本地')
+							that.getTemporaryPath(that.payQrcode)
 						}
 					}
 				})
-
-
+			},
+			// base64转成临时路径 保存本地
+			getTemporaryPath: function(base) {
+				var that = this
+				var aa = uni.getFileSystemManager();
+				aa.writeFile({
+					filePath: wx.env.USER_DATA_PATH + '/pay.png',
+					data: base,
+					encoding: 'base64',
+					success: res => {
+						uni.saveImageToPhotosAlbum({
+							filePath: wx.env.USER_DATA_PATH + '/pay.png',
+							success: function(res) {
+								that.isShowQrCodeDialog = false
+								Toast('保存成功')
+							},
+							fail: function(err) {
+								Toast('取消保存')
+							}
+						})
+					},
+					fail: err => {
+						Toast(err)
+					}
+				})
 			},
 			// 查询默认地址
 			checkDefaultAddress: function() {
