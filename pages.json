@@ -11,14 +11,14 @@
 			"path": "pages/shop/index",
 			"style": {
 				"navigationBarTitleText": "商品",
-				"disableScroll":true
+				"disableScroll": true
 			}
 		},
 		{
 			"path": "pages/pay/index",
 			"style": {
 				"navigationBarTitleText": "买单",
-				"disableScroll":true
+				"disableScroll": true
 			}
 		},
 		{
@@ -49,7 +49,15 @@
 			"path": "pages/orderList/index",
 			"style": {
 				"navigationBarTitleText": "订单列表",
-				"enablePullDownRefresh":true
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/exploreMore/index",
+			"style": {
+				"navigationBarTitleText": "探索更多",
+				"navigationStyle": "custom",
+				"navigationBarTextStyle":"white"
 			}
 		}
 
