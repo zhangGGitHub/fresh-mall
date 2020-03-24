@@ -125,6 +125,9 @@
 			if (uni.getStorageSync('isLogin')) {
 				this.checkDefaultAddress()
 			}
+			if (uni.getStorageSync('selectShopDetail')) {
+				Dialog.close()
+			}
 			if (uni.getStorageSync('selectShopDetail') && this.totalPrice == 0) {
 				this.getCommodityGroup(uni.getStorageSync('selectShopDetail').id)
 			}

@@ -63,6 +63,7 @@
 		onShow: function() {
 			if (uni.getStorageSync('selectShopDetail')) {
 				this.shopDetail = uni.getStorageSync('selectShopDetail')
+				Dialog.close()
 			} else {
 				Dialog.alert({
 					title: '提示',
