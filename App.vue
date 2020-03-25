@@ -1,4 +1,5 @@
 <script>
+	import Vue from 'vue'
 	export default {
 		onLaunch: function() {
 			console.log('App Launch')
@@ -24,6 +25,18 @@
 			} else {
 				uni.setStorageSync('isLogin', false)
 			}
+
+			// 获取系统导航栏的高度
+			uni.getSystemInfo({
+				success: function(e) {
+					Vue.prototype.StatusBar = e.statusBarHeight;
+					if (e.platform == 'android') {
+						Vue.prototype.CustomBar = e.statusBarHeight + 50;
+					} else {
+						Vue.prototype.CustomBar = e.statusBarHeight + 45;
+					};
+				}
+			})
 		},
 		onShow: function() {
 			console.log('App Show')
@@ -42,6 +55,10 @@
 	.van-submit-bar__text {
 		text-align: left !important;
 		padding-left: 50rpx;
+	}
+
+	.van-stepper__input--disabled {
+		color: #323233 !important;
 	}
 
 	.shadow_btn {

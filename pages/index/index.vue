@@ -75,6 +75,9 @@
 				</view>
 			</view>
 		</view>
+		<view class="margin-top-sm padding bg-white flex justify-center">
+			<image src="../../static/more.png" style="width: 90%;height: 100rpx;" @click="toVideoShop" />
+		</view>
 		<van-toast id="van-toast" />
 		<van-dialog id="van-dialog" />
 	</view>
@@ -213,6 +216,12 @@
 			toShop: function() {
 				uni.switchTab({
 					url: '../shop/index'
+				})
+			},
+			// 跳转视频商品页面
+			toVideoShop: function() {
+				uni.navigateTo({
+					url:'../videoShop/index'
 				})
 			}
 		}

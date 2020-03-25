@@ -57,7 +57,22 @@
 			"style": {
 				"navigationBarTitleText": "探索更多",
 				"navigationStyle": "custom",
-				"navigationBarTextStyle":"white"
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/videoShop/index",
+			"style": {
+				"navigationBarTitleText": "探索更多"
+			}
+		},
+		{
+			"path": "pages/videoDetail/index",
+			"style": {
+				"navigationBarTitleText": "视频详情",
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"disableScroll": true
 			}
 		}
 
