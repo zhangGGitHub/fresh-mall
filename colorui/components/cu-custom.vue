@@ -6,7 +6,7 @@
 					<text class="cuIcon-back"></text>
 					<slot name="backText"></slot>
 				</view>
-				<view class="content" :style="[{top:StatusBar + 'px'}]">
+				<view class="content custom1" :style="[{top:StatusBar + 'px'}]">
 					<slot name="content"></slot>
 				</view>
 				<slot name="right"></slot>
@@ -26,8 +26,8 @@
 		name: 'cu-custom',
 		computed: {
 			style() {
-				var StatusBar= this.StatusBar;
-				var CustomBar= this.CustomBar;
+				var StatusBar = this.StatusBar;
+				var CustomBar = this.CustomBar;
 				var bgImage = this.bgImage;
 				var style = `height:${CustomBar}px;padding-top:${StatusBar}px;`;
 				if (this.bgImage) {
@@ -61,5 +61,8 @@
 </script>
 
 <style>
-
+	.custom1 {
+		font-size: 26rpx !important;
+		color: #333333 !important;
+	}
 </style>

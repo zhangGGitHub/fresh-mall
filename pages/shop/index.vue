@@ -202,8 +202,8 @@
 						title: '提示',
 						message: '请先登录'
 					}).then(() => {
-						uni.switchTab({
-							url: '../personal/index'
+						uni.navigateTo({
+							url:'../login/index'
 						})
 					})
 				}

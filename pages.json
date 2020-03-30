@@ -8,6 +8,12 @@
 			}
 		},
 		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
 			"path": "pages/shop/index",
 			"style": {
 				"navigationBarTitleText": "商品",
@@ -73,6 +79,14 @@
 				"navigationStyle": "custom",
 				"navigationBarTextStyle": "white",
 				"disableScroll": true
+			}
+		},
+		{
+			"path": "pages/merchantSide/index",
+			"style": {
+				"navigationBarTitleText": "商家端首页",
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black"
 			}
 		}
 
